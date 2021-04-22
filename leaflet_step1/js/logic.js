@@ -22,37 +22,76 @@ function markerSize(mag){
   return mag * 5
 }
 
-function colors(c) {
-  if (c < 1){
-    return "#ea4512"
-  }
-  else if ( c < 2){
-    return "#e1f40c"
-  }
-  else if (c < 3){
-    return "#e5d204"
-  }
-  else if (c < 4){
-    return "#3f8708"
-  }
-  else if (c < 5 ){
-    return "#f27313"
-  }
-  else {
-    return "f7592a"
-  }
+// create a function that gets colors for circle markers
+function getColors(c) {
+if (c < 1){
+  return "#B7DF5F"
+}
+else if (c < 2){
+  return "#DCED11"
+}
+else if (c < 3){
+  return "#EDD911"
+}
+else if (c < 4){
+  return "#EDB411"
+}
+else if (c < 5 ){
+  return "#ED7211"
+}
+else {
+  return "#ED4311"
+}
 };
 
-function circles(feature, latlng ){
-  var markerOptions = {
-    radius: markerSize(feature.properties.mag),
-    fillColor: getColors(feature.properties.mag),
-    color: "black",
-    weight: 1,
-    opacity: 1,
-    fillOpacity: 0.8
-  }
-  return L.circles( latlng, markerOptions );
+// create a function that creates markers
+function createCircleMarker(feature, latlng ){
+
+// Change the values of these options to change the symbol's appearance
+var markerOptions = {
+  radius: markerSize(feature.properties.mag),
+  fillColor: getColors(feature.properties.mag),
+  color: "black",
+  weight: 1,
+  opacity: 1,
+  fillOpacity: 0.8
+}
+return L.circleMarker( latlng, markerOptions );
 };
 
+// Use json request to fetch the data from a URL
+d3.json(queryUrl, function(data) {
 
+console.log(data)
+
+var earthquakes = data.features
+
+console.log(earthquakes)
+
+// loop through the data to create markers and popup
+earthquakes.forEach(function(result){
+  //console.log(result.properties)
+  L.geoJSON(result,{
+    pointToLayer: createCircleMarker
+    // add popups to the circle markers to display data
+  }).bindPopup("Date: " + new Date(result.properties.time) + "<br>Place: " + result.properties.place + "<br>Magnitude: " + result.properties.mag).addTo(myMap)
+});
+
+//create legennds and add to the map
+var legend = L.control({position: "bottomright" });
+legend.onAdd = function(){
+  // create div for the legend
+  var div = L.DomUtil.create('div', 'info legend'),
+      grades = [0, 1, 2, 3, 4, 5]
+      labels = [];
+
+  // loop through our density intervals and generate a label with a colored square for each interval
+  for (var i = 0; i < grades.length; i++) {
+      div.innerHTML +=
+          '<i style="background:' + getColors(grades[i]) + '"></i> ' +
+          grades[i] + (grades[i +1 ] ? '&ndash;' + grades[i + 1] + '<br>' : '+');
+  }
+  return div;
+};
+legend.addTo(myMap);
+});
